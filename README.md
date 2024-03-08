@@ -6,12 +6,13 @@ The module allows you to work with simple neural networks (At the moment, the si
 ## How do I install it? ##
 Run this command in terminal:
 
-    pip install simple_neural_works
+    pip install simple-neural-works
 
 ## Quick Guide ##
 The module is based on the following structure:
 
-    
+
+    from simple_neural_works import Neuro
     ne = Neuro(10,5,5,0.1,False)
     ne.init_m()
     ne.fill_m()
@@ -34,7 +35,7 @@ Which Python provides by standard.
 
 Using the library is as simple and convenient as possible:
 
-First, import main module using "from simple_neural_works import Neuro"
+First, import main module using `from simple_neural_works import Neuro`
 
 The second, you need to initialize the creation of an array with data using the init_m function.
 
