@@ -3,6 +3,11 @@
 ## What is this? ##
 The module allows you to work with simple neural networks (At the moment, the simplest convolutional neural network model is used with the method of backpropagation of error and sigmoidal activation function).
 
+## How do I install it? ##
+Run this command in terminal:
+
+    pip install simple_neural_works
+
 ## Quick Guide ##
 The module is based on the following structure:
 
