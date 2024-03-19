@@ -181,7 +181,9 @@ class Neuro():
             f = open(fl_nm, "r")
         except Exception:
             raise Exception("Unable to load file. The file may not exist.")
-        if "zip" in f.readline(): # If you used the compressed saving method
+
+        ___ = f.readline()
+        if "zip" in ___: # If you used the compressed saving method
             uuu = self.dpt * (self.lenm + 1) * (self.lenm + 1)  # "uuu" means the number of elements to process
             if not self.mute:
                 print("start loading...")
@@ -196,7 +198,7 @@ class Neuro():
                 if time() - t > 60 and not self.mute:
                     print(kc, "/", uuu)
                     t = time()
-        elif "text" in f.readline(): # If you used the standard saving method
+        elif "text" in ___: # If you used the standard saving method
             uuu = self.dpt * (self.lenm + 1) * (self.lenm + 1)  # "uuu" means the number of elements to process
             if not self.mute:
                 print("start loading...")
@@ -291,7 +293,7 @@ class Neuro():
         hm = [0] * (self.lenm + 1)
         i: int
         for i in range(len(oua)):
-            hm[i] = float(oua)
+            hm[i] = float(oua[i])
         dem = []
         dem1 = [0] * (self.lenm + 1)
         i: int
