@@ -3,24 +3,19 @@
 ## What is this? ##
 The module allows you to work with simple neural networks (At the moment, the simplest convolutional neural network model is used with the method of backpropagation of error and sigmoidal activation function).
 
-## How do I install it? ##
-Run this command in terminal:
-
-    pip install simple-neural-works
-
 ## Quick Guide ##
 The module is based on the following structure:
 
-
+    
     from simple_neural_works import Neuro
-    ne = Neuro(10,5,5,0.1,False)
-    ne.init_m()
-    ne.fill_m()
+    a = [5,30,30,20,9]
+    ne = Neuro(a,0.1)
+    ne.fill(False)
     in = [0.5,1,1,0,0.001] # some values to input
-    a = ne.getv(in)
+    a = ne.get_result(in,False)
     ou = [1,1,1,1,0,1,0,0,1] # some values to train
-    ne.bpn(ou)
-    ne.save_m("filename.res")
+    ne.backpropagation(ou,False)
+    ne.save_m("filename.res",False)
     
     
 
@@ -35,54 +30,50 @@ Which Python provides by standard.
 
 Using the library is as simple and convenient as possible:
 
-First, import main module using `from simple_neural_works import Neuro`
+First, import main module using "from simple_neural_works import Neuro"
 
-The second, you need to initialize the creation of an array with data using the init_m function.
+The second, you need to load or create an array with data using the load() or fill() function.
 
 Examples of all operations:
 
 Creating an instance of a neural network with which you will then work.
 
-    ne = Neuro(wide, height, depth, speed of backpropagation, Muting the console output)
-
-Initializing an array of the required size before work (required):
-
-    ne.init_m()
+    ne = Neuro(array_width_of_slices_neaural_network,speed of backpropagation)
 
 
 Filling the weights with initial random values is used to create a neural network from scratch:
 
-    ne.fill_m()
+    ne.fill(mute)
 
 
 To load previously saved values from a file:
 
-    ne.load_m("filenamehere.txt")
+    ne.load("filenamehere.txt",mute)
     
 
 Function used to obtain the result of a neural network calculation:
 
-    ne.getv([some float or int values to input])
+    ne.get_result([some float or int values to input in array],mute)
 
 
-To train a neural network, use the following function. The input is an array, which should be the output of the neural network, the learning rate is controlled by the internal variable `ne.spd`, set manually and during network initialization. Only used after the `getv()` or `imgg()` function.
+To train a neural network, use the following function. The input is an array, which should be the output of the neural network, the learning rate is controlled by the internal variable `ne.spd`, set manually and during network initialization. Only used after the `get_result()` or `image_get_result()` function.
 
-    ne.bpn([some int or float values to train])
+    ne.backpropagation([some int or float values to train in array],mute)
 
 
 To quickly save an array of weights:
 
-    ne.save_m("filename.txt")
+    ne.save("filenamehere.txt",mute)
 
 
 For compact (up to two times smaller) but slower saving:
 
-    ne.zip_save_m("filename.txt")
+    ne.zip_save("filename.txt",mute)
 
 
 Blank for recognizing monochrome numbers. To read data from a PNG image (the image is inverted in color, that is, you need to draw it black, although this is not so important). To avoid specifying the entire path to the file, start the file name with "./".
 
-    ne.imgg("filename.png")
+    ne.image_get_result("filename.png",mute)
 
 
 ----------
@@ -100,15 +91,12 @@ An array storing the output values of the activation function:
 
     ne.ou
 
-Variable switching the output of intermediate data (number of operations per execution, execution progress, response accuracy for the `bpn()` function:
-
-    ne.mute
 
 Speed of backpropagation (between 0 and 1). If you don’t want to bother, then set it to 0.1. In more detail, at first you can use 1, towards the end of training 0.1:
 
-    ne.spd
+    ne.speed
 
-Please do not change the width, height and depth values while working, this will cause the operation to malfunction.
+Please do not change the width array while working, this will cause the operation to malfunction.
 ----------
 
 ----------
