@@ -1,8 +1,9 @@
-from random import randint
+from random import uniform
 from time import time
 
 import numpy
 from PIL import Image
+import math
 
 
 # Preface.
@@ -12,38 +13,9 @@ from PIL import Image
 # UPD1.0: After refactoring I can say that overall I like what I wrote. However, I don't think this
 # code should be an example of how to do it, not everything here is done in the most optimal way I'll
 # leave this for version 2.0 where i plan to add parallel computing (not the best thing for Python, but it should help).
-
-def ne__conv(a):
-    if a == 0:
-        return ""
-    return ne__conv(a // 93) + chr(a % 93 + 34)  # here I use 93-digit number system to convert it to ASCII characters,
-    #                                              which reduces the number of characters used to store
-
-
-def ne__convfl(a):
-    s = str(abs(a))
-    if "." in s:
-        if "e" in s:
-            p = s.find("-")
-            t = int(s[p + 1:])  # I catch the scientific type of notation float and designate negative numbers as “!!”.
-            s = s[:p - 1]  # This is the reason why negative integers are stored as float.
-            s = s.replace(".", "")
-            s = s[::-1] + "0" * (t - 1)
-            if a < 0:
-                return ne__conv(0) + "!!" + ne__conv(int(s))
-            else:
-                return ne__conv(0) + "!" + ne__conv(int(s))
-        else:
-            p = s.find(".")
-            if a < 0:
-                return ne__conv(int(s[:p])) + "!!" + ne__conv(int(s[p + 1:][::-1]))  # I expand the fractional part to
-            else:  # preserve the 0 before the first
-                return ne__conv(int(s[:p])) + "!" + ne__conv(int(s[p + 1:][::-1]))  # significant digit.
-    else:
-        if a < 0:
-            return ne__conv(abs(a)) + "!!"
-        else:
-            return ne__conv(abs(a))
+# UPD3.0: So, I don't think this code really needs parallel computing, because it's just an educational library and
+# (mostly) I'm lazy as shit. Now we have LeakyReLu, L1 and L2 regularization, more stable, more efficient, random value
+# normalization. Removed: zip saving, reason: ugly as shit and compression ratio less 30% (too low).
 
 
 def ne__rconv(s):
@@ -61,7 +33,6 @@ def ne__rconvfl(s):
         return float(str(ne__rconv(s[:p])) + "." + str(ne__rconv(s[p + 1:]))[::-1])
     else:
         return ne__rconv(s)
-
 
 class Neuro:
     def __init__(self, width, speed):
@@ -82,14 +53,14 @@ class Neuro:
         self.speed = speed
         self.width = width
         self.elements_to_count = su
+        self.correction_array = []
+        self.accuracy = 0
 
     @staticmethod
-    def activation_func(s):  # activation function definition
-        if s > 70:
-            s = 70  # overfill protection (figure pulled out of thin air)
-        if s < -70:
-            s = -70
-        return 1 / (1 + 2.71 ** (-2 * s))
+    def activation_func(s):  # activation function definition Leaky ReLu
+        if s >= 0:
+            return s
+        return s*0.09
 
     def fill(self, mute):
         if not mute:
@@ -99,11 +70,11 @@ class Neuro:
         for i in range(len(self.width) - 1):
             for j in range(self.width[i + 1]):
                 for k in range(self.width[i]):
-                    __ = randint(-50, 50) / randint(100, 500)
+                    __ = uniform(-math.sqrt(6/(self.width[i]*1.0081)), math.sqrt(6/(self.width[i]*1.0081)))
                     if __ == 0:
-                        __ += 0.01
+                        __ += 0.001
                     kc += 1
-                    self.w[i][j][k] = __  # filling the weights array with random values
+                    self.w[i][j][k] = __  # filling the weights array with random values (UPD3: now i use normalization)
                 if (not mute) and (time() - t >= 60):
                     print(kc, "/", self.elements_to_count)
                     t = time()
@@ -139,11 +110,11 @@ class Neuro:
         except Exception:
             raise Exception("Unable to load file. The file may not exist.")
         ___ = f.readline()
-        if "zip" in ___:  # If you used the compressed saving method
+        if "zip" in ___:  # If you used the compressed saving method (deprecated)
             for i in range(len(self.width) - 1):
                 for j in range(self.width[i + 1]):
                     for k in range(self.width[i]):
-                        self.w[i][j][k] = ne__rconvfl(f.readline())  # outstanding move (check comments later)
+                        self.w[i][j][k] = ne__rconvfl(f.readline())
                         kc += 1
                     if (not mute) and (time() - t >= 60):
                         print(kc, "/", self.elements_to_count)
@@ -167,7 +138,7 @@ class Neuro:
     # -----------------------------------------------In the previous version of the code (which did not work)
     #                                               I classified neurons into internal and axons. Now I got
     #                                               rid of this for brevity, readability and common sense
-    #                                               in general.
+    #                                               in general.(UPD1)
     def get_result(self, inp, mute):
         if not mute:
             print("Start counting...")
@@ -217,7 +188,9 @@ class Neuro:
 
     #                                              UPD2: Well, last time there REALLY was a mistake. I fixed it, but now
     #                                              I'm not sure of anything anymore.
-    def backpropagation(self, output_a, mute):
+
+    #                                              UPD3: So, another day, another fix, but now, maybe, it works.
+    def backpropagation(self, output_a, mute, L1=False, L2=False):
         if not mute:
             print("Start backpropagation...")
         t = time()
@@ -225,44 +198,60 @@ class Neuro:
         count = self.elements_to_count * 2
         if len(output_a) != self.width[-1]:
             raise Exception("Incorrect output array width")
-        correction_array = []
+        if L1 and L2:
+            raise Exception("Both L1 and L2 regularization can not be used.")
+        self.correction_array = []
         correction_array1 = []
         for i in range(len(output_a)):
-            correction_array1.append(self.ou[-1][i] * (1 - self.ou[-1][i]) * (output_a[i] - self.ou[-1][i]))
+            if self.ou[-1][i] < 0:
+                correction_array1.append(-(self.ou[-1][i] - output_a[i]) * 0.09)
+            else:
+                correction_array1.append(-(self.ou[-1][i]-output_a[i]))
             # getting the first layer of correction values. Starts from the output.
             kc += 1
-        correction_array.append(correction_array1)
+        self.correction_array.append(correction_array1)
         _i = 0
         for i in range(len(self.width) - 2, -1, -1):
             correction_array1 = []
             for j in range(self.width[i]):
                 su = 0
                 for k in range(self.width[i + 1]):
-                    su += correction_array[_i][k] * self.w[i][k][j]  # getting correction values for inner layers.
+                    if L1:
+                        su += self.correction_array[_i][k] * self.w[i][k][j]*abs(self.w[i][k][j])
+                        # getting correction values for inner layers with L1 regularization.
+                    elif L2:
+                        su += self.correction_array[_i][k] * self.w[i][k][j] * self.w[i][k][j] * self.w[i][k][j]
+                        # getting correction values for inner layers with L2 regularization.
+                    else:
+                        su += self.correction_array[_i][k] * self.w[i][k][j]
+                        # getting correction values for inner layers without regularization.
                     kc += 1
-                de = self.ou[i][j] * (1 - self.ou[i][j]) * su
+                if self.ou[i][j] < 0:
+                    de = su*0.09 #Leaky ReLu derivative with output <0
+                else:
+                    de = su #Leaky ReLu derivative with output >0
                 correction_array1.append(de)
                 if (not mute) and (time() - t >= 60):
                     print(kc, "/", count)
                     t = time()
-            correction_array.append(correction_array1)
+            self.correction_array.append(correction_array1)
             _i += 1
-        _ = len(self.width)
-        for i in range(_ - 1):
-            for j in range(self.width[i + 1]):
+        for i in range(len(self.width) - 1):
+            for j in range(self.width[i+1]):
                 for k in range(self.width[i]):
-                    self.w[i][j][k] += correction_array[_ - 2 - i][j] * self.speed * self.ou[i][
-                        k]  # adjusting values of weights
-                    kc += 1
-                if (not mute) and (time() - t >= 60):
-                    print(kc, "/", count)
-                    t = time()
+                    _ = self.correction_array[len(self.width)-2-i][j]
+                    self.w[i][j][k] += _ * self.speed * self.ou[i][k]
+        su = 0
+        for i in range(len(output_a)):
+            su += 1 - abs(output_a[i] - self.ou[-1][i]) / max(output_a[i], self.ou[-1][i],
+                                                              abs(output_a[i] - self.ou[-1][i]), 1)
+        self.accuracy = (su / len(output_a)) ** 2
         if not mute:
-            su = 0
-            for i in range(len(output_a)):
-                su += 1 - abs(output_a[i] - self.ou[-1][i])
-            print("accuracy:", (su / len(output_a)) ** 2)
+            print("accuracy:", self.accuracy)
             print("Done backpropagation")
+            if numpy.isnan(su):
+                raise Exception("NaN in out array. Maybe coefficients blows up, try using L1 or L2 regularization.")
+                #Sometimes this may mean you need a compression layer.
 
     # ---------------------------------------------converting the image and getting the result
     #                                              TODO:(Then the strength began to leave me and I did it with crutches,
@@ -289,28 +278,3 @@ class Neuro:
         if not mute:
             print("Done image converting")
         return self.get_result(inp, mute)
-
-    # ----------------------------------------------converting variable to characters for compressed storage
-    #                                               (Lossless compression is used)
-    #                                               Now I am going "to pull a rabbit out of the hat"
-    #                                               with recursion for faster saving in a compressed format,
-    #                                               for this I need a functions before declaration Neuro().
-    # ----------------------------------------------zip saving (2 times slower)
-    def zip_save(self, fl_nm, mute):
-        if not mute:
-            print("Start saving...")
-        kc = 0
-        t = time()
-        f = open(fl_nm, "w")
-        f.write("zip" + "\n")  # signal that compressed storage is being used
-        for i in range(len(self.width) - 1):
-            for j in range(self.width[i + 1]):
-                for k in range(self.width[i]):
-                    f.write(ne__convfl(self.w[i][j][k]) + "\n")  # outstanding move here!
-                    kc += 1
-                if (not mute) and (time() - t >= 60):
-                    t = time()
-                    print(kc, "/", self.elements_to_count)
-        f.close()
-        if not mute:
-            print("Done saving")
