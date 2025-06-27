@@ -1,7 +1,7 @@
 # Simple workS with neural networks #
 
 ## What is this? ##
-The module allows you to work with simple neural networks (At the moment, the simplest convolutional neural network model is used with the method of backpropagation of error and sigmoidal activation function).
+The module allows working with simple neural networks (Currently, the simplest model of a multilayer perceptron neural network with the backpropagation method and the Leaky ReLu activation function is used).
 
 ## Quick Guide ##
 The module is based on the following structure:
@@ -14,7 +14,7 @@ The module is based on the following structure:
     in = [0.5,1,1,0,0.001] # some values to input
     a = ne.get_result(in,False)
     ou = [1,1,1,1,0,1,0,0,1] # some values to train
-    ne.backpropagation(ou,False)
+    ne.backpropagation(ou,False,L1=True)
     ne.save_m("filename.res",False)
     
     
@@ -56,19 +56,14 @@ Function used to obtain the result of a neural network calculation:
     ne.get_result([some float or int values to input in array],mute)
 
 
-To train a neural network, use the following function. The input is an array, which should be the output of the neural network, the learning rate is controlled by the internal variable `ne.spd`, set manually and during network initialization. Only used after the `get_result()` or `image_get_result()` function.
+To train a neural network, use the following function. The input is an array, which should be the output of the neural network, the learning rate is controlled by the internal variable `ne.spd`, set manually and during network initialization. You can enable L1 or L2 regularization. Only used after the `get_result()` or `image_get_result()` function.
 
-    ne.backpropagation([some int or float values to train in array],mute)
+    ne.backpropagation([some int or float values to train in array],mute,L1,L2)
 
 
 To quickly save an array of weights:
 
     ne.save("filenamehere.txt",mute)
-
-
-For compact (up to two times smaller) but slower saving:
-
-    ne.zip_save("filename.txt",mute)
 
 
 Blank for recognizing monochrome numbers. To read data from a PNG image (the image is inverted in color, that is, you need to draw it black, although this is not so important). To avoid specifying the entire path to the file, start the file name with "./".
@@ -91,10 +86,17 @@ An array storing the output values of the activation function:
 
     ne.ou
 
-
 Speed of backpropagation (between 0 and 1). If you don’t want to bother, then set it to 0.1. In more detail, at first you can use 1, towards the end of training 0.1:
 
     ne.speed
+
+Error correction array. The last layer can be used for RNN neural networks.(It can be sent directly to the input of the backpropagation method).
+
+    ne.correction_array
+
+Average squared accuracy of the neural network response (after backpropagation).
+
+    ne.accuracy
 
 Please do not change the width array while working, this will cause the operation to malfunction.
 ----------
